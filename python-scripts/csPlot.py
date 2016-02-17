@@ -99,11 +99,13 @@ def plotRssi(data):
 	minRssi = data2["minRssi"]
 	maxRssi = data2["maxRssi"]
 
+	figures = []
 	lineColors = ["b", "g", "r", "c", "m", "y", "k"]
 	lineStyles = ["o", "^", "d", "+", "*"]
 	for devAddr in scansPerDev:
 #		plt.figure()
 		fig, axarr = plt.subplots(len(scansPerDev[devAddr]), sharex=True, sharey=True)
+		figures.append(fig)
 		devName = devAddr
 		if (devName in beaconNames):
 			devName = beaconNames[devAddr]
@@ -126,7 +128,7 @@ def plotRssi(data):
 			if (len(scansPerDev[devAddr]) < 2):
 				subplot = axarr
 			subplot.plot(timestamps, rssis, fmt, alpha=0.3, label=nodeName)
-			subplot.legend()
+			subplot.legend(loc="upper left")
 #			subplot.set_xlim([startTimestamp, endTimestamp])
 			subplot.axis([startTimestamp, endTimestamp, minRssi, maxRssi])
 			i+=1
@@ -148,13 +150,14 @@ def plotRssi(data):
 			axarr.set_title("Scanned device: " + devName)
 			axarr.set_xticks(xticks)
 			axarr.set_xticklabels(formattedTimestamps, rotation="vertical")
+	return figures
 
 
-def plotScanFrequency(data):
+def plotScanFrequency(data, windowSize=600):
 	scans = data["scans"]
 	startTimestamp = data["startTimestamp"]
 	endTimestamp = data["endTimestamp"]
-	windowSize = 10*60
+
 	data2 = getFrequencyPerDevicePerNode(data, windowSize)
 	numScans = data2["numScansPerDev"]
 	startTimes = data2["startTimes"]
@@ -162,9 +165,11 @@ def plotScanFrequency(data):
 	lineColors = ["b", "g", "r", "c", "m", "y", "k"]
 	lineStyles = ["o", "^", "d", "+", "*"]
 
+	figures = []
 	for devAddr in numScans:
 #		plt.figure()
 		fig, axarr = plt.subplots(len(numScans[devAddr]), sharex=True, sharey=True)
+		figures.append(fig)
 		devName = devAddr
 		if (devName in beaconNames):
 			devName = beaconNames[devAddr]
@@ -181,7 +186,7 @@ def plotScanFrequency(data):
 			if (len(numScans[devAddr]) < 2):
 				subplot = axarr
 			subplot.plot(startTimes[1:], numScans[devAddr][nodeAddr], fmt, alpha=1.0, label=nodeName)
-			subplot.legend()
+			subplot.legend(loc="upper left")
 			subplot.set_xlim([startTimestamp, endTimestamp])
 			i+=1
 
@@ -200,6 +205,63 @@ def plotScanFrequency(data):
 			axarr.set_title("Scanned device: " + devName)
 			axarr.set_xticks(xticks)
 			axarr.set_xticklabels(formattedTimestamps, rotation="vertical")
+	return figures
+
+
+
+def plotAvgRssi(data, windowSize=600):
+	scans = data["scans"]
+	startTimestamp = data["startTimestamp"]
+	endTimestamp = data["endTimestamp"]
+
+	data2 = getAverageRssiPerDevicePerNode(data, windowSize)
+	avgRssi = data2["avgRssiPerDev"]
+	startTimes = data2["startTimes"]
+
+	lineColors = ["b", "g", "r", "c", "m", "y", "k"]
+	lineStyles = ["o", "^", "d", "+", "*"]
+
+	figures = []
+	for devAddr in avgRssi:
+#		plt.figure()
+		fig, axarr = plt.subplots(len(avgRssi[devAddr]), sharex=True, sharey=True)
+		figures.append(fig)
+		devName = devAddr
+		if (devName in beaconNames):
+			devName = beaconNames[devAddr]
+
+		i=0
+		for nodeAddr in avgRssi[devAddr]:
+#			fmt = lineColors[i % len(lineColors)] + lineStyles[int(i/len(lineColors)) % len(lineStyles)]
+			fmt = "b-"
+			nodeName = nodeAddr
+			if (nodeAddr in beaconNames):
+				nodeName = beaconNames[nodeAddr]
+#			plt.plot(startTimes[1:], numScans[nodeAddr], fmt, alpha=0.3, label=nodeName)
+			subplot = axarr[i]
+			if (len(avgRssi[devAddr]) < 2):
+				subplot = axarr
+			subplot.plot(startTimes[1:], avgRssi[devAddr][nodeAddr], fmt, alpha=1.0, label=nodeName)
+			subplot.legend(loc="upper left")
+			subplot.set_xlim([startTimestamp, endTimestamp])
+			i+=1
+
+		duration = endTimestamp-startTimestamp
+		xticks = range(int(startTimestamp), int(endTimestamp+1), int(duration/100))
+		formattedTimestamps = []
+		for xtick in xticks:
+			formattedTimestamps.append(datetime.datetime.fromtimestamp(xtick).strftime("%m-%d %H:%M"))
+		if (len(avgRssi[devAddr]) > 1):
+			fig.subplots_adjust(hspace=0)
+			axarr[0].set_title("Scanned device: " + devName)
+			axarr[-1].set_xticks(xticks)
+			axarr[-1].set_xticklabels(formattedTimestamps, rotation="vertical")
+			plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
+		else:
+			axarr.set_title("Scanned device: " + devName)
+			axarr.set_xticks(xticks)
+			axarr.set_xticklabels(formattedTimestamps, rotation="vertical")
+	return figures
 
 
 
