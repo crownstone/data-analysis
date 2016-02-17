@@ -21,7 +21,7 @@ if __name__ == '__main__':
 			pickle.dump(logData, fp, pickle.HIGHEST_PROTOCOL)
 
 	# Filter out scanned beacons
-	logData = filterDevAddresses(logData, beaconNames.keys(), False)
+	logData = filterDevAddresses(logData, beaconNames.keys(), True)
 
 	# Only show devices that got scanned often
 	logData = filterMostScannedDevices(logData, 10)
