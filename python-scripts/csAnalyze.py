@@ -54,5 +54,31 @@ def getFrequencyPerDevicePerNode(data, windowSize):
 	return {"numScansPerDev":numScans, "startTimes": startTimes}
 
 
+def getAverageRssiPerDevicePerNode(data, windowSize):
+	startTimestamp = data["startTimestamp"]
+	endTimestamp = data["endTimestamp"]
+	data2 = getScansPerDevicePerNode(data)
+	scansPerDev = data2["scansPerDev"]
+	startTimes = range(int(startTimestamp), int(endTimestamp)+1, windowSize)
+	avgRssi = {}
+	for devAddr in scansPerDev:
+		avgRssi[devAddr] = {}
+		for nodeAddr in scansPerDev[devAddr]:
+			avgRssi[devAddr][nodeAddr] = [-105.0]*(len(startTimes)-1)
+		for tInd in range(1,len(startTimes)):
+			for nodeAddr in scansPerDev[devAddr]:
+				rssiSum = 0.0
+				numScans = 0
+				for scan in scansPerDev[devAddr][nodeAddr]:
+					timestamp = scan["time"]
+					rssi = scan["rssi"]
+					if (startTimes[tInd-1] <= timestamp < startTimes[tInd]):
+						rssiSum += rssi
+						numScans += 1
+				if (numScans > 0):
+					avgRssi[devAddr][nodeAddr][tInd-1] = rssiSum / numScans
+	return {"avgRssiPerDev":avgRssi, "startTimes": startTimes}
+
+
 if __name__ == '__main__':
 	print "File not intended as main."
