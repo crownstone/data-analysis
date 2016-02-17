@@ -24,8 +24,9 @@ if __name__ == '__main__':
 	logData = filterDevAddresses(logData, beaconNames.keys(), True)
 
 	# Only show devices that got scanned often
-	logData = filterMostScannedDevices(logData, 10)
+	logData = filterMostScannedDevices(logData, 10, False)
 
+	# Plot the result
 	plotScansAsDots(logData)
 
 	plt.show()

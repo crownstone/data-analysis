@@ -17,7 +17,7 @@ def filterDevAddresses(data, addresses, remove=False):
 				scans[addr].pop(i)
 	return data
 
-def filterMostScannedDevices(data, minNumTimesScanned):
+def filterMostScannedDevices(data, minNumTimesScanned, remove=False):
 	numTimesScanned = {}
 	scans = data["scans"]
 	for addr in scans:
@@ -38,7 +38,9 @@ def filterMostScannedDevices(data, minNumTimesScanned):
 		for i in range(len(scans[addr])-1, -1,-1):
 			scan = scans[addr][i]
 			dev = scan["address"]
-			if (numTimesScanned[dev] < minNumTimesScanned):
+			if (numTimesScanned[dev] < minNumTimesScanned and not remove):
+				scans[addr].pop(i)
+			if (numTimesScanned[dev] >= minNumTimesScanned and remove):
 				scans[addr].pop(i)
 	return data
 
