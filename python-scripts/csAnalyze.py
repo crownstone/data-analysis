@@ -3,6 +3,18 @@ Get other data out of the parsed data
 """
 
 def getScansPerDevicePerNode(data):
+	"""
+	Returns data as scans per device per node.
+	:param data: Data as returned by the parse functions
+	:return: dict with:
+		["scansPerDev"]:
+			["<device address>"]:
+				["<node address>"]:
+					["time"]: timestamp
+					["rssi"]: rssi
+		["minRssi"]: minimal rssi of all scans
+		["maxRssi"]: maximal rssi of all scans
+	"""
 	scans = data["scans"]
 	scansPerDev = {}
 	minRssi = 127
@@ -27,11 +39,13 @@ def getScansPerDevicePerNode(data):
 	return {"scansPerDev":scansPerDev, "minRssi":minRssi, "maxRssi":maxRssi}
 
 
-def getFrequencyPerDevicePerNode(data, windowSize):
+
+def getFrequencyPerDevicePerNode(data, windowSize, stepSize):
 	"""
 	Returns the number of time each device was scanned by each node, over time.
 	:param data: Data as returned by the parse functions
 	:param windowSize: Size of bucket window in seconds
+	:param stepSize: Size of each time step in seconds
 	:return dict with:
 		["startTimes"]: [timestamp, timestamp, ...]
 		["numScansPerDev"]:
@@ -42,7 +56,7 @@ def getFrequencyPerDevicePerNode(data, windowSize):
 	endTimestamp = data["endTimestamp"]
 	data2 = getScansPerDevicePerNode(data)
 	scansPerDev = data2["scansPerDev"]
-	startTimes = range(int(startTimestamp), int(endTimestamp)+1, windowSize)
+	startTimes = range(int(startTimestamp), int(endTimestamp)-windowSize+1, stepSize)
 	numScans = {}
 	for devAddr in scansPerDev:
 		if (devAddr not in numScans):
@@ -55,8 +69,7 @@ def getFrequencyPerDevicePerNode(data, windowSize):
 					numScans[devAddr][nodeAddr].append(0.0)
 				for scan in scansPerDev[devAddr][nodeAddr]:
 					timestamp = scan["time"]
-					rssi = scan["rssi"]
-					if (startTimes[tInd-1] <= timestamp < startTimes[tInd]):
+					if (startTimes[tInd] <= timestamp < startTimes[tInd]+windowSize):
 						numScans[devAddr][nodeAddr][-1] += 1.0
 				# Beacon 0, 5, 9 scan six times faster atm
 				if (nodeAddr in ["E8:00:93:4E:7B:D9", "F5:A7:4B:49:8C:7D", "FE:04:85:F9:8F:E9"]):
@@ -64,11 +77,13 @@ def getFrequencyPerDevicePerNode(data, windowSize):
 	return {"numScansPerDev":numScans, "startTimes": startTimes}
 
 
-def getAverageRssiPerDevicePerNode(data, windowSize):
+
+def getAverageRssiPerDevicePerNode(data, windowSize, stepSize):
 	"""
 	Returns the average rssi of each device with each node, over time.
 	:param data: Data as returned by the parse functions
 	:param windowSize: Size of averaging window in seconds
+	:param stepSize: Size of each time step in seconds
 	:return dict with:
 		["startTimes"]: [timestamp, timestamp, ...]
 		["avgRssiPerDev"]:
@@ -79,28 +94,29 @@ def getAverageRssiPerDevicePerNode(data, windowSize):
 	endTimestamp = data["endTimestamp"]
 	data2 = getScansPerDevicePerNode(data)
 	scansPerDev = data2["scansPerDev"]
-	startTimes = range(int(startTimestamp), int(endTimestamp)+1, windowSize)
+	startTimes = range(int(startTimestamp), int(endTimestamp)-windowSize+1, stepSize)
 	avgRssi = {}
 	for devAddr in scansPerDev:
 		avgRssi[devAddr] = {}
 		for nodeAddr in scansPerDev[devAddr]:
-			avgRssi[devAddr][nodeAddr] = [-105.0]*(len(startTimes)-1)
-		for tInd in range(1,len(startTimes)):
+			avgRssi[devAddr][nodeAddr] = [-105.0]*(len(startTimes))
+		for tInd in range(0,len(startTimes)):
 			for nodeAddr in scansPerDev[devAddr]:
 				rssiSum = 0.0
 				numScans = 0
 				for scan in scansPerDev[devAddr][nodeAddr]:
 					timestamp = scan["time"]
 					rssi = scan["rssi"]
-					if (startTimes[tInd-1] <= timestamp < startTimes[tInd]):
+					if (startTimes[tInd] <= timestamp < startTimes[tInd]+windowSize):
 						rssiSum += rssi
 						numScans += 1
 				if (numScans > 0):
-					avgRssi[devAddr][nodeAddr][tInd-1] = rssiSum / numScans
+					avgRssi[devAddr][nodeAddr][tInd] = rssiSum / numScans
 	return {"avgRssiPerDev":avgRssi, "startTimes": startTimes}
 
 
-def getPathPerDevice(data, windowSize, nodeLocations):
+
+def getPathPerDevice(data, windowSize, stepSize, nodeLocations):
 	"""
 	Returns the estimated positions of each device, over time.
 	:param data: Data as returned by the parse functions
@@ -113,19 +129,19 @@ def getPathPerDevice(data, windowSize, nodeLocations):
 				["x"]: [float, float, float, ...]
 				["y"]: [float, float, float, ...]
 	"""
-	data2 = getFrequencyPerDevicePerNode(data, windowSize)
+	data2 = getFrequencyPerDevicePerNode(data, windowSize, stepSize)
 	numScans = data2["numScansPerDev"]
 	startTimes = data2["startTimes"]
-	data3 = getAverageRssiPerDevicePerNode(data, windowSize)
+	data3 = getAverageRssiPerDevicePerNode(data, windowSize, stepSize)
 	avgRssi = data3["avgRssiPerDev"]
 
 	paths = {}
 	for dev in numScans:
-		pathX = [0.0]*(len(startTimes)-1)
-		pathY = [0.0]*(len(startTimes)-1)
+		pathX = [0.0]*len(startTimes)
+		pathY = [0.0]*len(startTimes)
 		paths[dev] = {"x":pathX, "y":pathY}
 
-		for tInd in range(0, len(startTimes)-1):
+		for tInd in range(0, len(startTimes)):
 			weightSum = 0
 			weights = {}
 			for nodeAddr in numScans[dev]:

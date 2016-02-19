@@ -157,12 +157,12 @@ def plotRssi(data):
 	return figures
 
 
-def plotScanFrequency(data, windowSize=600):
+def plotScanFrequency(data, windowSize=600, stepSize=60):
 	scans = data["scans"]
 	startTimestamp = data["startTimestamp"]
 	endTimestamp = data["endTimestamp"]
 
-	data2 = getFrequencyPerDevicePerNode(data, windowSize)
+	data2 = getFrequencyPerDevicePerNode(data, windowSize, stepSize)
 	numScans = data2["numScansPerDev"]
 	startTimes = data2["startTimes"]
 
@@ -187,7 +187,6 @@ def plotScanFrequency(data, windowSize=600):
 			nodeName = nodeAddr
 			if (nodeAddr in beaconNames):
 				nodeName = beaconNames[nodeAddr]
-#			plt.plot(startTimes[1:], numScans[nodeAddr], fmt, alpha=0.3, label=nodeName)
 			subplot = axarr[i]
 			if (len(numScans[devAddr]) < 2):
 				subplot = axarr
@@ -215,12 +214,12 @@ def plotScanFrequency(data, windowSize=600):
 
 
 
-def plotAvgRssi(data, windowSize=600):
+def plotAvgRssi(data, windowSize=600, stepSize=60):
 	scans = data["scans"]
 	startTimestamp = data["startTimestamp"]
 	endTimestamp = data["endTimestamp"]
 
-	data2 = getAverageRssiPerDevicePerNode(data, windowSize)
+	data2 = getAverageRssiPerDevicePerNode(data, windowSize, stepSize)
 	avgRssi = data2["avgRssiPerDev"]
 	startTimes = data2["startTimes"]
 
@@ -249,7 +248,8 @@ def plotAvgRssi(data, windowSize=600):
 			subplot = axarr[i]
 			if (len(avgRssi[devAddr]) < 2):
 				subplot = axarr
-			subplot.plot(startTimes[1:], avgRssi[devAddr][nodeAddr], fmt, alpha=1.0, label=nodeName)
+#			subplot.plot(startTimes[1:], avgRssi[devAddr][nodeAddr], fmt, alpha=1.0, label=nodeName)
+			subplot.plot(startTimes, avgRssi[devAddr][nodeAddr], fmt, alpha=1.0, label=nodeName)
 			subplot.legend(loc="upper left")
 			subplot.set_xlim([startTimestamp, endTimestamp])
 			i+=1
