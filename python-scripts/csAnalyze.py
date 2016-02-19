@@ -28,6 +28,16 @@ def getScansPerDevicePerNode(data):
 
 
 def getFrequencyPerDevicePerNode(data, windowSize):
+	"""
+	Returns the number of time each device was scanned by each node, over time.
+	:param data: Data as returned by the parse functions
+	:param windowSize: Size of bucket window in seconds
+	:return dict with:
+		["startTimes"]: [timestamp, timestamp, ...]
+		["numScansPerDev"]:
+			["<device address>"]:
+				["<node address>"]: [rssi, rssi, ...]
+	"""
 	startTimestamp = data["startTimestamp"]
 	endTimestamp = data["endTimestamp"]
 	data2 = getScansPerDevicePerNode(data)
@@ -55,6 +65,16 @@ def getFrequencyPerDevicePerNode(data, windowSize):
 
 
 def getAverageRssiPerDevicePerNode(data, windowSize):
+	"""
+	Returns the average rssi of each device with each node, over time.
+	:param data: Data as returned by the parse functions
+	:param windowSize: Size of averaging window in seconds
+	:return dict with:
+		["startTimes"]: [timestamp, timestamp, ...]
+		["avgRssiPerDev"]:
+			["<device address>"]:
+				["<node address>"]: [rssi, rssi, ...]
+	"""
 	startTimestamp = data["startTimestamp"]
 	endTimestamp = data["endTimestamp"]
 	data2 = getScansPerDevicePerNode(data)
@@ -78,6 +98,56 @@ def getAverageRssiPerDevicePerNode(data, windowSize):
 				if (numScans > 0):
 					avgRssi[devAddr][nodeAddr][tInd-1] = rssiSum / numScans
 	return {"avgRssiPerDev":avgRssi, "startTimes": startTimes}
+
+
+def getPathPerDevice(data, windowSize, nodeLocations):
+	"""
+	Returns the estimated positions of each device, over time.
+	:param data: Data as returned by the parse functions
+	:param windowSize: Size of averaging window in seconds
+	:param nodeLocations: position of each scanning node
+	:return dict with:
+		["startTimes"]: [timestamp, timestamp, ...]
+		["pathPerDevice"]:
+			["<device address>"]:
+				["x"]: [float, float, float, ...]
+				["y"]: [float, float, float, ...]
+	"""
+	data2 = getFrequencyPerDevicePerNode(data, windowSize)
+	numScans = data2["numScansPerDev"]
+	startTimes = data2["startTimes"]
+	data3 = getAverageRssiPerDevicePerNode(data, windowSize)
+	avgRssi = data3["avgRssiPerDev"]
+
+	paths = {}
+	for dev in numScans:
+		pathX = [0.0]*(len(startTimes)-1)
+		pathY = [0.0]*(len(startTimes)-1)
+		paths[dev] = {"x":pathX, "y":pathY}
+
+		for tInd in range(0, len(startTimes)-1):
+			weightSum = 0
+			weights = {}
+			for nodeAddr in numScans[dev]:
+#				weights[nodeAddr] = numScans[dev][nodeAddr][tInd] - 0.0
+				weights[nodeAddr] = (avgRssi[dev][nodeAddr][tInd] + 105.0)**2
+				weightSum += weights[nodeAddr]
+
+#			# If almost no node scanned the device, assume it stayed on the same location?
+#			if (weightSum < 1.0 and tInd > 0):
+#				pathX[tInd] = pathX[tInd-1]
+#				pathY[tInd] = pathY[tInd-1]
+			# If almost no node scanned the device, assume it's not here
+			if (weightSum < 1.0):
+				pathX[tInd] = float("NaN")
+				pathY[tInd] = float("NaN")
+				continue
+
+			for nodeAddr in numScans[dev]:
+				weight = weights[nodeAddr] / weightSum
+				pathX[tInd] += weight * nodeLocations[nodeAddr]["x"]
+				pathY[tInd] += weight * nodeLocations[nodeAddr]["y"]
+	return {"pathPerDevice":paths, "startTimes":startTimes}
 
 
 if __name__ == '__main__':

@@ -4,8 +4,8 @@ import time
 import datetime
 
 """
-Parses a log file and returns the parsed data
-:param filename:
+Parses a log file and returns the parsed data.
+:param filename: filename of the log.
 :return:
 data["scans"]
 	scans["node address"] = [entry, entry, ...]
