@@ -26,6 +26,8 @@ def plotScansAsDots(data):
 		for device in timestamps:
 			if (device in beaconNames):
 				names.append(beaconNames[device])
+			elif (device in jawBones):
+				names.append(jawBones[device])
 			else:
 				names.append(device)
 		plt.yticks(range(0,j), names)
@@ -107,8 +109,10 @@ def plotRssi(data):
 		fig, axarr = plt.subplots(len(scansPerDev[devAddr]), sharex=True, sharey=True)
 		figures.append(fig)
 		devName = devAddr
-		if (devName in beaconNames):
+		if (devAddr in beaconNames):
 			devName = beaconNames[devAddr]
+		elif (devAddr in jawBones):
+			devName = jawBones[devAddr]
 #		plt.title("Scanned device: " + devName)
 		i=0
 		for nodeAddr in scansPerDev[devAddr]:
@@ -173,6 +177,8 @@ def plotScanFrequency(data, windowSize=600):
 		devName = devAddr
 		if (devName in beaconNames):
 			devName = beaconNames[devAddr]
+		elif (devAddr in jawBones):
+			devName = jawBones[devAddr]
 
 		i=0
 		for nodeAddr in numScans[devAddr]:
@@ -229,6 +235,8 @@ def plotAvgRssi(data, windowSize=600):
 		devName = devAddr
 		if (devName in beaconNames):
 			devName = beaconNames[devAddr]
+		elif (devAddr in jawBones):
+			devName = jawBones[devAddr]
 
 		i=0
 		for nodeAddr in avgRssi[devAddr]:
