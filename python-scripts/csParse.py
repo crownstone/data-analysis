@@ -6,6 +6,7 @@ import datetime
 """
 Parses a log file and returns the parsed data.
 :param filename: filename of the log.
+:param ownAddress: (optional) address of the recording device if its measurements should be included.
 :return:
 data["scans"]
 	scans["node address"] = [entry, entry, ...]
@@ -18,7 +19,7 @@ data["endTimestamp"] = last seen timestamp
 """
 
 
-def parseMinicom(filename):
+def parseMinicom(filename, ownAddress=None):
 	scanning = False
 	logfile = open(filename, "r")
 
@@ -29,6 +30,10 @@ def parseMinicom(filename):
 	# Search for something like:
 	# [2015-12-24 11:23:16] [cs_MeshControl.cpp             : 79   ] 2: [C4 D0 90 6F 53 4B]   rssi:  -51    occ:  10
 	scanPattern = re.compile("\\[([0-9 \\-:]+)\\] .* [0-9]+: \\[([0-9A-F ]+)\\]\\s+rssi:\\s+(-?[0-9]+)\\s+occ:\\s+([0-9]+)")
+
+	# Search for something like:
+	# [2016-02-24 10:50:35] Advertisement from: [EF 36 60 78 1F 1D], rssi: -74
+	ownPattern = re.compile("\\[([0-9 \\-:]+)\\] Advertisement from:\\s+\\[([0-9A-F ]+)\\],\\s+rssi:\\s+(-?[0-9]+)")
 
 	# scans: map with:
 	#	scans["node address"] = [entry, entry, ...]
@@ -42,6 +47,10 @@ def parseMinicom(filename):
 	nodes = []
 	scans = {}
 	data = {"scans" : scans}
+
+	if (ownAddress is not None):
+		nodes.append(ownAddress)
+#		print ownAddress
 
 	startFound = False
 	startTimestamp = -1
@@ -72,6 +81,19 @@ def parseMinicom(filename):
 				else:
 					scans[address].append(entry)
 #				print matches
+
+		if(ownAddress is not None):
+			matches = ownPattern.findall(line)
+			if len(matches):
+				timestamp = time.mktime(datetime.datetime.strptime(matches[0][0], "%Y-%m-%d %H:%M:%S").timetuple())
+				if (startTimestamp < 0):
+					startTimestamp = timestamp
+				endTimestamp = timestamp
+				entry = {"time":timestamp, "address":(matches[0][1]).replace(" ", ":"), "rssi":matches[0][2], "occurances":"1"}
+				if (ownAddress not in scans):
+					scans[ownAddress] = [entry]
+				else:
+					scans[ownAddress].append(entry)
 
 	logfile.close()
 
