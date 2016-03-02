@@ -1,6 +1,8 @@
 """
 Get other data out of the parsed data
 """
+import datetime
+
 
 def getScansPerDevicePerNode(data):
 	"""
@@ -164,6 +166,51 @@ def getPathPerDevice(data, windowSize, stepSize, nodeLocations):
 				pathX[tInd] += weight * nodeLocations[nodeAddr]["x"]
 				pathY[tInd] += weight * nodeLocations[nodeAddr]["y"]
 	return {"pathPerDevice":paths, "startTimes":startTimes}
+
+
+def getTimedMeasurements(*data, **kwargs):
+	"""
+	Returns data as a list of timestamps with corresponding measurements.
+	:param *data: One or more data structures as returned by the parse functions
+	:return: dict with:
+		["data"]:
+			["<timestamp>"]:
+				["<node address>"]:
+					["<device address>"]: [rssi, rssi, ...]
+		["startTimestamp"]
+		["endTimestamp"]
+	"""
+	output = {
+		"data":{}
+	}
+	startTimestamp = -1
+	endTimestamp = -1
+	for d in data:
+		for node in d["scans"]:
+			for entry in d["scans"][node]:
+				if "start" in kwargs and entry["time"] < kwargs["start"]:
+					continue
+				if "end" in kwargs and entry["time"] > kwargs["end"]:
+					continue
+
+				if entry["time"] < startTimestamp or startTimestamp == -1:
+					startTimestamp = entry["time"]
+				if entry["time"] > endTimestamp or endTimestamp == -1:
+					endTimestamp = entry["time"]
+
+				timeStamp = str(entry["time"])
+				device = entry["address"]
+				if timeStamp not in output["data"]:
+					output["data"][timeStamp] = {}
+				if node not in output["data"][timeStamp]:
+					output["data"][timeStamp][node] = {}
+				if device not in output["data"][timeStamp][node]:
+					output["data"][timeStamp][node][device] = []
+				output["data"][timeStamp][node][device].append(entry["rssi"])
+	output["startTimestamp"] = startTimestamp
+	output["endTimestamp"] = endTimestamp
+	return output
+
 
 
 if __name__ == '__main__':
