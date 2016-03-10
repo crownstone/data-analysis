@@ -33,7 +33,7 @@ def parseMinicom(filename, ownAddress=None):
 
 	# Search for something like:
 	# [2016-02-24 10:50:35] Advertisement from: [EF 36 60 78 1F 1D], rssi: -74
-	ownPattern = re.compile("\\[([0-9 \\-:]+)\\] Advertisement from:\\s+\\[([0-9A-F ]+)\\],\\s+rssi:\\s+(-?[0-9]+)")
+	ownPattern = re.compile("\\[([0-9 \\-:]+)\\] .* Advertisement from:\\s+\\[([0-9A-F ]+)\\],\\s+rssi:\\s+(-?[0-9]+)")
 
 	# scans: map with:
 	#	scans["node address"] = [entry, entry, ...]
@@ -85,7 +85,11 @@ def parseMinicom(filename, ownAddress=None):
 		if(ownAddress is not None):
 			matches = ownPattern.findall(line)
 			if len(matches):
-				timestamp = time.mktime(datetime.datetime.strptime(matches[0][0], "%Y-%m-%d %H:%M:%S").timetuple())
+				try:
+					timestamp = time.mktime(datetime.datetime.strptime(matches[0][0], "%Y-%m-%d %H:%M:%S").timetuple())
+				except:
+					print "Error parsing timestamp '{}'!".format(line)
+					continue
 				if (startTimestamp < 0):
 					startTimestamp = timestamp
 				endTimestamp = timestamp
