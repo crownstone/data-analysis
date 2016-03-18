@@ -40,6 +40,44 @@ def getScansPerDevicePerNode(data):
 
 
 
+def getScansPerNodePerDevice(data):
+	"""
+	Returns data as scans per node per device.
+	:param data: Data as returned by the parse functions
+	:return: dict with:
+		["scansPerNode"]:
+			["<node address>"]:
+				["<device address>"]:
+					["time"]: timestamp
+					["rssi"]: rssi
+		["minRssi"]: minimal rssi of all scans
+		["maxRssi"]: maximal rssi of all scans
+	"""
+	scans = data["scans"]
+	scansPerNode = {}
+	minRssi = 127
+	maxRssi = -127
+	for nodeAddr in scans:
+		for scan in scans[nodeAddr]:
+			devAddr = scan["address"]
+			timestamp = scan["time"]
+			rssi = scan["rssi"]
+			entry = {"time":timestamp, "rssi":rssi}
+			if (nodeAddr not in scansPerNode):
+				scansPerNode[nodeAddr] = {}
+
+			if (devAddr not in scansPerNode[nodeAddr]):
+				scansPerNode[nodeAddr][devAddr] = [entry]
+			else:
+				scansPerNode[nodeAddr][devAddr].append(entry)
+			if (rssi > maxRssi):
+				maxRssi = rssi
+			if (rssi < minRssi):
+				minRssi = rssi
+	return {"scansPerNode":scansPerNode, "minRssi":minRssi, "maxRssi":maxRssi}
+
+
+
 def getFrequencyPerDevicePerNode(data, windowSize, stepSize):
 	"""
 	Returns the number of time each device was scanned by each node, over time.

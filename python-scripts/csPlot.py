@@ -92,7 +92,7 @@ def plotScansAsDots2(data):
 
 
 
-def plotRssi(data):
+def plotRssiPerDevice(data):
 	scans = data["scans"]
 	startTimestamp = data["startTimestamp"]
 	endTimestamp = data["endTimestamp"]
@@ -128,9 +128,9 @@ def plotRssi(data):
 			nodeName = nodeAddr
 			if (nodeAddr in beaconNames):
 				nodeName = beaconNames[nodeAddr]
-			subplot = axarr[i]
-			if (len(scansPerDev[devAddr]) < 2):
-				subplot = axarr
+			subplot = axarr
+			if (len(scansPerDev[devAddr]) > 1):
+				subplot = axarr[i]
 			subplot.plot(timestamps, rssis, fmt, alpha=0.3, label=nodeName)
 			subplot.legend(loc="upper left")
 #			subplot.set_xlim([startTimestamp, endTimestamp])
@@ -155,6 +155,74 @@ def plotRssi(data):
 			axarr.set_xticks(xticks)
 			axarr.set_xticklabels(formattedTimestamps, rotation="vertical")
 	return figures
+
+
+
+def plotRssiPerNode(data):
+	scans = data["scans"]
+	startTimestamp = data["startTimestamp"]
+	endTimestamp = data["endTimestamp"]
+
+	data2 = getScansPerNodePerDevice(data)
+	scansPerNode = data2["scansPerNode"]
+	minRssi = data2["minRssi"]
+	maxRssi = data2["maxRssi"]
+
+	figures = []
+	lineColors = ["b", "g", "r", "c", "m", "y", "k"]
+	lineStyles = ["o", "^", "d", "+", "*"]
+	for nAddr in scansPerNode:
+#		plt.figure()
+		fig, axarr = plt.subplots(len(scansPerNode[nAddr]), sharex=True, sharey=True)
+		figures.append(fig)
+		nName = nAddr
+		if (nAddr in beaconNames):
+			nName = beaconNames[nAddr]
+		elif (nAddr in jawBones):
+			nName = jawBones[nAddr]
+#		plt.title("Node: " + nName)
+		i=0
+		for dAddr in scansPerNode[nAddr]:
+			timestamps = []
+			rssis = []
+			for scan in scansPerNode[nAddr][dAddr]:
+				timestamp = scan["time"]
+				rssi = scan["rssi"]
+				timestamps.append(timestamp)
+				rssis.append(rssi)
+#			fmt = lineColors[i % len(lineColors)] + lineStyles[int(i/len(lineColors)) % len(lineStyles)]
+			fmt = "b."
+			dName = dAddr
+			if (dAddr in beaconNames):
+				dName = beaconNames[dAddr]
+			subplot = axarr
+			if (len(scansPerNode[nAddr]) > 1):
+				subplot = axarr[i]
+			subplot.plot(timestamps, rssis, fmt, alpha=0.3, label=dName)
+			subplot.legend(loc="upper left")
+#			subplot.set_xlim([startTimestamp, endTimestamp])
+			subplot.axis([startTimestamp, endTimestamp, minRssi, maxRssi])
+			i+=1
+#		plt.legend(loc="upper left")
+
+		duration = endTimestamp-startTimestamp
+		xticks = range(int(startTimestamp), int(endTimestamp+1), int(duration/100))
+		formattedTimestamps = []
+		for xtick in xticks:
+			formattedTimestamps.append(datetime.datetime.fromtimestamp(xtick).strftime("%m-%d %H:%M"))
+
+		if (len(scansPerNode[nAddr]) > 1):
+			fig.subplots_adjust(hspace=0)
+			axarr[0].set_title("Scanned device: " + nName)
+			axarr[-1].set_xticks(xticks)
+			axarr[-1].set_xticklabels(formattedTimestamps, rotation="vertical")
+			plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
+		else:
+			axarr.set_title("Scanned device: " + nName)
+			axarr.set_xticks(xticks)
+			axarr.set_xticklabels(formattedTimestamps, rotation="vertical")
+	return figures
+
 
 
 def plotScanFrequency(data, windowSize=600, stepSize=60):
