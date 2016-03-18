@@ -18,6 +18,10 @@ data["endTimestamp"] = last seen timestamp
 """
 
 
+"""
+Data recorded with minicom.
+Press ctrl-a, n for timestamps. Then ctrl-a, l to capture to file.
+"""
 def parseMinicom(filename):
 	scanning = False
 	logfile = open(filename, "r")
@@ -81,7 +85,9 @@ def parseMinicom(filename):
 
 
 
-
+"""
+Data gathered with the app "crownstone-hub".
+"""
 def parseHubData(filename):
 	logfile = open(filename, "r")
 	scans = {}
@@ -122,6 +128,10 @@ def parseHubData(filename):
 	return data
 
 
+
+"""
+Data gathered with the app "rssi test".
+"""
 def parseRssiTest(filename):
 	logfile = open(filename, "r")
 	scans = {}
@@ -139,7 +149,7 @@ def parseRssiTest(filename):
 
 		timestamp = time.mktime(datetime.datetime.strptime(items[0], "%Y-%m-%dT%H:%M:%S").timetuple())
 		address = items[1]
-		rssi = items[2]
+		rssi = int(items[2])
 		entry = {"time":timestamp, "address":address, "rssi":rssi}
 		scans[nodeAddress].append(entry)
 
