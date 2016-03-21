@@ -154,7 +154,7 @@ def getAverageRssiPerDevicePerNode(data, windowSize, stepSize):
 
 
 
-def getPathPerDevice(data, windowSize, stepSize, nodeLocations):
+def getPathPerDevice2D(data, windowSize, stepSize, nodeLocations):
 	"""
 	Returns the estimated positions of each device, over time.
 	:param data: Data as returned by the parse functions
