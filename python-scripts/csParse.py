@@ -184,5 +184,46 @@ def parseRssiTest(filename):
 	return data
 
 
+
+"""
+Data gathered by bluenet-lib
+
+data["scans"]
+	scans["node address"] = [entry, entry, ...]
+		entry["time"] = timestamp
+		entry["address"] = address of scanned device
+		entry["rssi"] = rssi
+		entry["occurances"] = occurances (optional)
+data["startTimestamp"] = first seen timestamp
+data["endTimestamp"] = last seen timestamp
+
+"""
+def parseBluenetLib(filename):
+	logfile = open(filename, "r")
+	scans = {}
+	data = {"scans" : scans}
+	startTimestamp = -1
+	endTimestamp = -1
+
+	nodeAddress = "00:00:00:00:00:00"
+	scans[nodeAddress] = []
+
+	for line in logfile:
+		columns = line.rstrip().split(' ')
+		if (columns[1] == "onScan"):
+			timestamp = int(columns[0])
+			address = columns[2]
+			rssi = int(columns[3])
+			entry = {"time":timestamp, "address":address, "rssi":rssi}
+			scans[nodeAddress].append(entry)
+
+			if (startTimestamp < 0):
+				startTimestamp = timestamp
+			endTimestamp = timestamp
+	logfile.close()
+	data["startTimestamp"] = startTimestamp
+	data["endTimestamp"] = endTimestamp
+	return data
+
 if __name__ == '__main__':
 	print "File not intended as main."
