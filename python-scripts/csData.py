@@ -1,19 +1,29 @@
-def getName(address):
+def getName(address, nodeList=None):
 	name = address
+	if (nodeList):
+		if (address in nodeList):
+			name = nodeList[address]["name"]
 	for devList in devLists:
 		if (address in devList):
 			name = devList[address]["name"]
 			break
 	return name
 
-def getLocation(address):
+
+def getLocation(address, nodeList=None):
 	location = [0.0, 0.0, 0.0]
-	for devList in devLists:
-		if (address in devList):
-			location[0] = devList[address]["x"]
-			location[1] = devList[address]["y"]
-			location[2] = devList[address]["z"]
-			break
+	if (nodeList):
+		if (address in nodeList):
+			location[0] = nodeList[address]["x"]
+			location[1] = nodeList[address]["y"]
+			location[2] = nodeList[address]["z"]
+	else:
+		for devList in devLists:
+			if (address in devList):
+				location[0] = devList[address]["x"]
+				location[1] = devList[address]["y"]
+				location[2] = devList[address]["z"]
+				break
 	return location
 
 jawBones = {
@@ -106,7 +116,7 @@ beacons = {
 	"EB:C9:C2:58:52:C4":{"name":"32k balcony",                  "x":416, "y":522,  "z":1108+145},
 	"C2:92:09:5F:04:78":{"name":"32k jan geert",                "x":619, "y":1240, "z":733+15},
 	"EF:79:08:EF:50:AC":{"name":"32k dobots hardware", "x":0, "y":0, "z":0},
-	"E8:C5:AE:A7:6B:A9":{"name":"32k small multi purpose room", "x":0, "y":822, "z":1108+10},
+	"E8:C5:AE:A7:6B:A9":{"name":"32k small multi purpose room", "x":0,   "y":822,  "z":1108+10},
 
 	"EC:9C:70:56:9F:90":{"name":"32k", "x":0, "y":0, "z":0},
 }
