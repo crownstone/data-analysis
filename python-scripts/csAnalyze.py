@@ -99,7 +99,7 @@ def getFrequencyPerDevicePerNode(data, windowSize, stepSize):
 	for devAddr in scansPerDev:
 		if (devAddr not in numScans):
 			numScans[devAddr] = {}
-		for tInd in range(1,len(startTimes)):
+		for tInd in xrange(1,len(startTimes)):
 			for nodeAddr in scansPerDev[devAddr]:
 				if (nodeAddr not in numScans[devAddr]):
 					numScans[devAddr][nodeAddr] = [0.0]

@@ -374,11 +374,11 @@ def plotBandwidth2(data):
 
 			tIndStart = max(timeInd - window/2/dt, 0)
 			tIndEnd = min(timeInd + window/2/dt, len(startTimes)-1)
-			for tInd in range(tIndStart, tIndEnd):
+			for tInd in xrange(tIndStart, tIndEnd):
 				numScans[node][tInd] += 1.0
 				numScans["total"][tInd] += 1.0
 
-		for timeInd in range(0, len(startTimes)):
+		for timeInd in xrange(0, len(startTimes)):
 			tIndStart = max(timeInd - window/2/dt, 0)
 			tIndEnd = min(timeInd + window/2/dt, len(startTimes)-1)
 			actualWindowSize = startTimes[tIndEnd] - startTimes[tIndStart]
@@ -387,7 +387,7 @@ def plotBandwidth2(data):
 		plt.title("Number of scanned devices per second (moving average)")
 		plt.plot(startTimes[0:-1], numScans[node][0:-1])
 
-	for timeInd in range(0, len(startTimes)):
+	for timeInd in xrange(0, len(startTimes)):
 		tIndStart = max(timeInd - window/2/dt, 0)
 		tIndEnd = min(timeInd + window/2/dt, len(startTimes)-1)
 		actualWindowSize = startTimes[tIndEnd] - startTimes[tIndStart]

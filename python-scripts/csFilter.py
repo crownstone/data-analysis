@@ -8,7 +8,7 @@ Set remove to True to remove all matching items
 def filterDevAddresses(data, addresses, remove=False):
 	scans = data["scans"]
 	for addr in scans:
-		for i in range(len(scans[addr])-1, -1,-1):
+		for i in xrange(len(scans[addr])-1, -1,-1):
 			scan = scans[addr][i]
 			dev = scan["address"]
 			if (dev in addresses and remove):
@@ -35,7 +35,7 @@ def filterMostScannedDevices(data, minNumTimesScanned, remove=False):
 #	sortedList = sorted(numTimesScannedList, key=operator.attrgetter("num"), reverse=True)
 
 	for addr in scans:
-		for i in range(len(scans[addr])-1, -1,-1):
+		for i in xrange(len(scans[addr])-1, -1,-1):
 			scan = scans[addr][i]
 			dev = scan["address"]
 			if (numTimesScanned[dev] < minNumTimesScanned and not remove):
