@@ -2,7 +2,6 @@ import re
 import json
 import time
 import datetime
-import math
 
 """
 Parses a log file and returns the parsed data.

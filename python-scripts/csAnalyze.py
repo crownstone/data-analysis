@@ -1,7 +1,6 @@
 """
 Get other data out of the parsed data
 """
-import datetime
 
 
 from csData import *
