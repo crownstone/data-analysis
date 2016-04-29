@@ -20,6 +20,10 @@ data["endTimestamp"] = last seen timestamp
 """
 
 
+"""
+Data recorded with minicom.
+Press ctrl-a, n for timestamps. Then ctrl-a, l to capture to file.
+"""
 def parseMinicom(filename, ownAddress=None):
 	scanning = False
 	logfile = open(filename, "r")
@@ -119,7 +123,9 @@ def parseMinicom(filename, ownAddress=None):
 
 
 
-
+"""
+Data gathered with the app "crownstone-hub".
+"""
 def parseHubData(filename):
 	logfile = open(filename, "r")
 	scans = {}
@@ -160,6 +166,10 @@ def parseHubData(filename):
 	return data
 
 
+
+"""
+Data gathered with the app "rssi test".
+"""
 def parseRssiTest(filename):
 	logfile = open(filename, "r")
 	scans = {}
@@ -177,7 +187,7 @@ def parseRssiTest(filename):
 
 		timestamp = time.mktime(datetime.datetime.strptime(items[0], "%Y-%m-%dT%H:%M:%S").timetuple())
 		address = items[1]
-		rssi = items[2]
+		rssi = int(items[2])
 		entry = {"time":timestamp, "address":address, "rssi":rssi}
 		scans[nodeAddress].append(entry)
 
@@ -189,6 +199,47 @@ def parseRssiTest(filename):
 	data["endTimestamp"] = endTimestamp
 	return data
 
+
+
+"""
+Data gathered by bluenet-lib
+
+data["scans"]
+	scans["node address"] = [entry, entry, ...]
+		entry["time"] = timestamp
+		entry["address"] = address of scanned device
+		entry["rssi"] = rssi
+		entry["occurances"] = occurances (optional)
+data["startTimestamp"] = first seen timestamp
+data["endTimestamp"] = last seen timestamp
+
+"""
+def parseBluenetLib(filename):
+	logfile = open(filename, "r")
+	scans = {}
+	data = {"scans" : scans}
+	startTimestamp = -1
+	endTimestamp = -1
+
+	nodeAddress = "00:00:00:00:00:00"
+	scans[nodeAddress] = []
+
+	for line in logfile:
+		columns = line.rstrip().split(' ')
+		if (columns[1] == "onScan"):
+			timestamp = int(columns[0])
+			address = columns[2]
+			rssi = int(columns[3])
+			entry = {"time":timestamp, "address":address, "rssi":rssi}
+			scans[nodeAddress].append(entry)
+
+			if (startTimestamp < 0):
+				startTimestamp = timestamp
+			endTimestamp = timestamp
+	logfile.close()
+	data["startTimestamp"] = startTimestamp
+	data["endTimestamp"] = endTimestamp
+	return data
 
 if __name__ == '__main__':
 	print "File not intended as main."

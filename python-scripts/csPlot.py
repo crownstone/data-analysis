@@ -24,17 +24,10 @@ def plotScansAsDots(data):
 			j+=1
 		names = []
 		for device in timestamps:
-			if (device in beaconNames):
-				names.append(beaconNames[device])
-			elif (device in jawBones):
-				names.append(jawBones[device])
-			else:
-				names.append(device)
+			names.append(getName(device))
 		plt.yticks(range(0,j), names)
 
-		nodeName = nodeAddress
-		if (nodeAddress in beaconNames):
-			nodeName = beaconNames[nodeAddress]
+		nodeName = getName(nodeAddress)
 		plt.title("Devices scanned by " + nodeName)
 
 		duration = endTimestamp-startTimestamp
@@ -80,9 +73,7 @@ def plotScansAsDots2(data):
 		plt.plot(timestamps, [i]*len(timestamps), ".")
 #		plt.plot(timestamps, [i]*len(timestamps), ",")
 
-		nodeName = nodeAddr
-		if (nodeAddr in beaconNames):
-			nodeName = beaconNames[nodeAddr]
+		nodeName = getName(nodeAddr)
 		names.append(nodeName)
 		i+=1
 
@@ -92,7 +83,7 @@ def plotScansAsDots2(data):
 
 
 
-def plotRssi(data):
+def plotRssiPerDevice(data):
 	scans = data["scans"]
 	startTimestamp = data["startTimestamp"]
 	endTimestamp = data["endTimestamp"]
@@ -108,11 +99,7 @@ def plotRssi(data):
 #		plt.figure()
 		fig, axarr = plt.subplots(len(scansPerDev[devAddr]), sharex=True, sharey=True)
 		figures.append(fig)
-		devName = devAddr
-		if (devAddr in beaconNames):
-			devName = beaconNames[devAddr]
-		elif (devAddr in jawBones):
-			devName = jawBones[devAddr]
+		devName = getName(devAddr)
 #		plt.title("Scanned device: " + devName)
 		i=0
 		for nodeAddr in scansPerDev[devAddr]:
@@ -125,12 +112,10 @@ def plotRssi(data):
 				rssis.append(rssi)
 #			fmt = lineColors[i % len(lineColors)] + lineStyles[int(i/len(lineColors)) % len(lineStyles)]
 			fmt = "b."
-			nodeName = nodeAddr
-			if (nodeAddr in beaconNames):
-				nodeName = beaconNames[nodeAddr]
-			subplot = axarr[i]
-			if (len(scansPerDev[devAddr]) < 2):
-				subplot = axarr
+			nodeName = getName(nodeAddr)
+			subplot = axarr
+			if (len(scansPerDev[devAddr]) > 1):
+				subplot = axarr[i]
 			subplot.plot(timestamps, rssis, fmt, alpha=0.3, label=nodeName)
 			subplot.legend(loc="upper left")
 #			subplot.set_xlim([startTimestamp, endTimestamp])
@@ -157,6 +142,68 @@ def plotRssi(data):
 	return figures
 
 
+
+def plotRssiPerNode(data):
+	scans = data["scans"]
+	startTimestamp = data["startTimestamp"]
+	endTimestamp = data["endTimestamp"]
+
+	data2 = getScansPerNodePerDevice(data)
+	scansPerNode = data2["scansPerNode"]
+	minRssi = data2["minRssi"]
+	maxRssi = data2["maxRssi"]
+
+	figures = []
+	lineColors = ["b", "g", "r", "c", "m", "y", "k"]
+	lineStyles = ["o", "^", "d", "+", "*"]
+	for nodeAddr in scansPerNode:
+#		plt.figure()
+		fig, axarr = plt.subplots(len(scansPerNode[nodeAddr]), sharex=True, sharey=True)
+		figures.append(fig)
+		nodeName = getName(nodeAddr)
+#		plt.title("Node: " + nName)
+		i=0
+		for devAddr in scansPerNode[nodeAddr]:
+			timestamps = []
+			rssis = []
+			for scan in scansPerNode[nodeAddr][devAddr]:
+				timestamp = scan["time"]
+				rssi = scan["rssi"]
+				timestamps.append(timestamp)
+				rssis.append(rssi)
+#			fmt = lineColors[i % len(lineColors)] + lineStyles[int(i/len(lineColors)) % len(lineStyles)]
+			fmt = "b."
+			devName = getName(devAddr)
+			subplot = axarr
+			if (len(scansPerNode[nodeAddr]) > 1):
+				subplot = axarr[i]
+			subplot.plot(timestamps, rssis, fmt, alpha=0.3, label=devName)
+			subplot.legend(loc="upper left")
+#			subplot.set_xlim([startTimestamp, endTimestamp])
+			subplot.axis([startTimestamp, endTimestamp, minRssi, maxRssi])
+			i+=1
+#		plt.legend(loc="upper left")
+
+		duration = endTimestamp-startTimestamp
+		xticks = range(int(startTimestamp), int(endTimestamp+1), int(duration/100))
+		formattedTimestamps = []
+		for xtick in xticks:
+			formattedTimestamps.append(datetime.datetime.fromtimestamp(xtick).strftime("%m-%d %H:%M"))
+
+		if (len(scansPerNode[nodeAddr]) > 1):
+			fig.subplots_adjust(hspace=0)
+			axarr[0].set_title("Scanned device: " + nodeName)
+			axarr[-1].set_xticks(xticks)
+			axarr[-1].set_xticklabels(formattedTimestamps, rotation="vertical")
+			plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
+		else:
+			axarr.set_title("Scanned device: " + nodeName)
+			axarr.set_xticks(xticks)
+			axarr.set_xticklabels(formattedTimestamps, rotation="vertical")
+	return figures
+
+
+
 def plotScanFrequency(data, windowSize=600, stepSize=60):
 	scans = data["scans"]
 	startTimestamp = data["startTimestamp"]
@@ -174,19 +221,13 @@ def plotScanFrequency(data, windowSize=600, stepSize=60):
 #		plt.figure()
 		fig, axarr = plt.subplots(len(numScans[devAddr]), sharex=True, sharey=True)
 		figures.append(fig)
-		devName = devAddr
-		if (devName in beaconNames):
-			devName = beaconNames[devAddr]
-		elif (devAddr in jawBones):
-			devName = jawBones[devAddr]
+		devName = getName(devAddr)
 
 		i=0
 		for nodeAddr in numScans[devAddr]:
 #			fmt = lineColors[i % len(lineColors)] + lineStyles[int(i/len(lineColors)) % len(lineStyles)]
 			fmt = "b-"
-			nodeName = nodeAddr
-			if (nodeAddr in beaconNames):
-				nodeName = beaconNames[nodeAddr]
+			nodeName = getName(nodeAddr)
 			subplot = axarr[i]
 			if (len(numScans[devAddr]) < 2):
 				subplot = axarr
@@ -231,19 +272,13 @@ def plotAvgRssi(data, windowSize=600, stepSize=60):
 #		plt.figure()
 		fig, axarr = plt.subplots(len(avgRssi[devAddr]), sharex=True, sharey=True)
 		figures.append(fig)
-		devName = devAddr
-		if (devName in beaconNames):
-			devName = beaconNames[devAddr]
-		elif (devAddr in jawBones):
-			devName = jawBones[devAddr]
+		devName = getName(devAddr)
 
 		i=0
 		for nodeAddr in avgRssi[devAddr]:
 #			fmt = lineColors[i % len(lineColors)] + lineStyles[int(i/len(lineColors)) % len(lineStyles)]
 			fmt = "b-"
-			nodeName = nodeAddr
-			if (nodeAddr in beaconNames):
-				nodeName = beaconNames[nodeAddr]
+			nodeName = getName(nodeAddr)
 #			plt.plot(startTimes[1:], numScans[nodeAddr], fmt, alpha=0.3, label=nodeName)
 			subplot = axarr[i]
 			if (len(avgRssi[devAddr]) < 2):
@@ -301,9 +336,7 @@ def plotBandwidth(data):
 #			numScans[timeInd] += 1
 			numScans[node][timeInd] += 1.0 / dt
 			numScans["total"][timeInd] += 1.0 / dt
-			scannerName = node
-			if (node in beaconNames):
-				scannerName = beaconNames[node]
+			scannerName = getName(node)
 		plt.title("Number of scanned devices per second")
 		fmt = lineColors[i % len(lineColors)] + lineStyles[int(i/len(lineColors)) % len(lineStyles)]
 		plt.plot(startTimes[0:-1], numScans[node][0:-1], fmt, label=scannerName)
@@ -341,11 +374,11 @@ def plotBandwidth2(data):
 
 			tIndStart = max(timeInd - window/2/dt, 0)
 			tIndEnd = min(timeInd + window/2/dt, len(startTimes)-1)
-			for tInd in range(tIndStart, tIndEnd):
+			for tInd in xrange(tIndStart, tIndEnd):
 				numScans[node][tInd] += 1.0
 				numScans["total"][tInd] += 1.0
 
-		for timeInd in range(0, len(startTimes)):
+		for timeInd in xrange(0, len(startTimes)):
 			tIndStart = max(timeInd - window/2/dt, 0)
 			tIndEnd = min(timeInd + window/2/dt, len(startTimes)-1)
 			actualWindowSize = startTimes[tIndEnd] - startTimes[tIndStart]
@@ -354,7 +387,7 @@ def plotBandwidth2(data):
 		plt.title("Number of scanned devices per second (moving average)")
 		plt.plot(startTimes[0:-1], numScans[node][0:-1])
 
-	for timeInd in range(0, len(startTimes)):
+	for timeInd in xrange(0, len(startTimes)):
 		tIndStart = max(timeInd - window/2/dt, 0)
 		tIndEnd = min(timeInd + window/2/dt, len(startTimes)-1)
 		actualWindowSize = startTimes[tIndEnd] - startTimes[tIndStart]
