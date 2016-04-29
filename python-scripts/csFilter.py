@@ -4,6 +4,8 @@ Set remove to False to keep only matching items
 Set remove to True to remove all matching items
 """
 
+import datetime
+
 
 def filterDevAddresses(data, addresses, remove=False):
 	scans = data["scans"]
@@ -43,6 +45,53 @@ def filterMostScannedDevices(data, minNumTimesScanned, remove=False):
 			if (numTimesScanned[dev] >= minNumTimesScanned and remove):
 				scans[addr].pop(i)
 	return data
+
+
+def filterTime(data, start=None, end=None):
+	startTimestamp = -1
+	endTimestamp = -1
+	filteredData = {
+		"scans": {},
+		"startTimestamp": startTimestamp,
+		"endTimestamp": endTimestamp
+	}
+	for node in data["scans"]:
+		for entry in data["scans"][node]:
+			if start and entry["time"] < start:
+				continue
+			if end and entry["time"] > end:
+				continue
+			if entry["time"] < startTimestamp or startTimestamp == -1:
+				startTimestamp = entry["time"]
+			if entry["time"] > endTimestamp or endTimestamp == -1:
+				endTimestamp = entry["time"]
+			if node not in filteredData["scans"]:
+				filteredData["scans"][node] = []
+			filteredData["scans"][node].append(entry)
+	filteredData["startTimestamp"] = startTimestamp
+	filteredData["endTimestamp"] = endTimestamp
+	return filteredData
+
+
+def mergeData(*data):
+	mergedData = {
+		"scans": {},
+		"startTimestamp": None,
+		"endTimestamp": None,
+	}
+	for thisData in data:
+		if not mergedData["startTimestamp"] or thisData["startTimestamp"] < mergedData["startTimestamp"]:
+			mergedData["startTimestamp"] = thisData["startTimestamp"]
+		if not mergedData["endTimestamp"] or thisData["endTimestamp"] > mergedData["endTimestamp"]:
+			mergedData["endTimestamp"] = thisData["endTimestamp"]
+		for node_address in thisData["scans"]:
+			entries = thisData["scans"][node_address]
+			if node_address not in mergedData["scans"]:
+				mergedData["scans"][node_address] = []
+			for entry in entries:
+				mergedData["scans"][node_address].append(entry)
+	return mergedData
+
 
 
 if __name__ == '__main__':

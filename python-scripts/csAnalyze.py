@@ -198,7 +198,7 @@ def getTimedMeasurements(*data, **kwargs):
 				if entry["time"] > endTimestamp or endTimestamp == -1:
 					endTimestamp = entry["time"]
 
-				timeStamp = str(entry["time"])
+				timeStamp = str(round(entry["time"],1))
 				device = entry["address"]
 				if timeStamp not in output["data"]:
 					output["data"][timeStamp] = {}

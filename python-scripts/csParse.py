@@ -2,6 +2,7 @@ import re
 import json
 import time
 import datetime
+import math
 
 """
 Parses a log file and returns the parsed data.
@@ -33,7 +34,7 @@ def parseMinicom(filename, ownAddress=None):
 
 	# Search for something like:
 	# [2016-02-24 10:50:35] Advertisement from: [EF 36 60 78 1F 1D], rssi: -74
-	ownPattern = re.compile("\\[([0-9 \\-:]+)\\] .* Advertisement from:\\s+\\[([0-9A-F ]+)\\],\\s+rssi:\\s+(-?[0-9]+)")
+	ownPattern = re.compile("\\[([0-9 \\-:\\.]+)\\].*Advertisement from:\\s+\\[([0-9A-F ]+)\\],\\s+rssi:\\s+(-?[0-9]+)")
 
 	# scans: map with:
 	#	scans["node address"] = [entry, entry, ...]
@@ -86,13 +87,24 @@ def parseMinicom(filename, ownAddress=None):
 			matches = ownPattern.findall(line)
 			if len(matches):
 				try:
-					timestamp = time.mktime(datetime.datetime.strptime(matches[0][0], "%Y-%m-%d %H:%M:%S").timetuple())
-				except:
-					print "Error parsing timestamp '{}'!".format(line)
-					continue
+					timedata = datetime.datetime.strptime(matches[0][0], "%Y-%m-%d %H:%M:%S.%f")
+				except Exception:
+					timedata = None
+				if not timedata:
+					try:
+						timedata = datetime.datetime.strptime(matches[0][0], "%Y-%m-%d %H:%M:%S")
+					except Exception:
+						print "Error parsing timestamp '{}'!".format(line)
+						continue
+
+				timestamp = time.mktime(timedata.timetuple()) + timedata.microsecond / 1e6
+
 				if (startTimestamp < 0):
 					startTimestamp = timestamp
 				endTimestamp = timestamp
+				if float(matches[0][2]) < -105 or float(matches[0][2]) > -40:
+					print "RSSI outlier: {}".format(line)
+					continue
 				entry = {"time":timestamp, "address":(matches[0][1]).replace(" ", ":"), "rssi":matches[0][2], "occurances":"1"}
 				if (ownAddress not in scans):
 					scans[ownAddress] = [entry]
