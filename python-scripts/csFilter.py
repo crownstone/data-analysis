@@ -4,8 +4,6 @@ Set remove to False to keep only matching items
 Set remove to True to remove all matching items
 """
 
-import datetime
-
 
 def filterDevAddresses(data, addresses, remove=False):
 	scans = data["scans"]
